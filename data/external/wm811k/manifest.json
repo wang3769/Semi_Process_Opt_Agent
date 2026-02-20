@@ -1,0 +1,18 @@
+{
+  "dataset": "WM-811K (Synthetic)",
+  "source": "Generated for development",
+  "n_samples": 5000,
+  "n_classes": 9,
+  "classes": [
+    "center",
+    "donut",
+    "edge-loc",
+    "edge-ring",
+    "local",
+    "random",
+    "scratch",
+    "none",
+    "near-full"
+  ],
+  "note": "Synthetic data - replace with real WM-811K when available"
+}

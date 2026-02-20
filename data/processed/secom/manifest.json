@@ -1,0 +1,10 @@
+{
+  "dataset": "SECOM",
+  "source": "Synthetic (development)",
+  "url": null,
+  "n_samples": 1567,
+  "n_features": 590,
+  "n_positive": 125,
+  "n_negative": 1442,
+  "pass_rate": 0.0797702616464582
+}
