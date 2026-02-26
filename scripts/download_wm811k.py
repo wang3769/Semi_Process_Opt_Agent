@@ -34,7 +34,7 @@ OUTPUT_DIR = Path(__file__).parent.parent / "data" / "external" / DATASET_NAME
 # Using a known stable mirror
 KAGGLE_DATASET_URL = "https://www.kaggle.com/api/v1/datasets/download/aminere/wm-811k-wafer-map"
 
-
+# this becomes a dead function, no longer used, but keeping for reference. 
 def download_kaggle_dataset(url: str, dest_path: Path) -> None:
     """Download from Kaggle using their API format."""
     print(f"Attempting download from: {url}")

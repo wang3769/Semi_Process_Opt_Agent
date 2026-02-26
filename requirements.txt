@@ -17,6 +17,8 @@ ax-platform>=0.3.0
 
 # RAG & Embeddings
 sentence-transformers>=2.2.0
+chromadb>=0.4.0
+pdfplumber>=0.10.0
 faiss-cpu>=1.7.4
 pgvector>=0.1.0
 psycopg2-binary>=2.9.0
@@ -27,6 +29,7 @@ peft>=0.4.0
 accelerate>=0.20.0
 trl>=0.4.0
 bitsandbytes>=0.39.0
+datasets>=2.14.0
 
 # Agent & Orchestration
 langchain>=0.1.0
