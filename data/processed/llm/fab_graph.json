@@ -1,0 +1,675 @@
+{
+  "nodes": {
+    "CVD_1": {
+      "id": "CVD_1",
+      "type": "equipment",
+      "name": "CVD Chamber 1",
+      "description": "Chemical Vapor Deposition chamber",
+      "properties": {}
+    },
+    "CVD_2": {
+      "id": "CVD_2",
+      "type": "equipment",
+      "name": "CVD Chamber 2",
+      "description": "Chemical Vapor Deposition chamber",
+      "properties": {}
+    },
+    "ETCH_1": {
+      "id": "ETCH_1",
+      "type": "equipment",
+      "name": "Etch Chamber 1",
+      "description": "Plasma etch chamber",
+      "properties": {}
+    },
+    "LITHO_1": {
+      "id": "LITHO_1",
+      "type": "equipment",
+      "name": "Lithography Station 1",
+      "description": "Coating and exposure",
+      "properties": {}
+    },
+    "CMP_1": {
+      "id": "CMP_1",
+      "type": "equipment",
+      "name": "CMP Station 1",
+      "description": "Chemical Mechanical Polishing",
+      "properties": {}
+    },
+    "CLEAN_1": {
+      "id": "CLEAN_1",
+      "type": "equipment",
+      "name": "Clean Station 1",
+      "description": "Wafer cleaning",
+      "properties": {}
+    },
+    "ROBOT_1": {
+      "id": "ROBOT_1",
+      "type": "equipment",
+      "name": " wafer Robot",
+      "description": "Wafer handling robot",
+      "properties": {}
+    },
+    "LOAD_PORT_1": {
+      "id": "LOAD_PORT_1",
+      "type": "equipment",
+      "name": "Load Port 1",
+      "description": "Wafer input/output",
+      "properties": {}
+    },
+    "PRESSURE_1": {
+      "id": "PRESSURE_1",
+      "type": "sensor",
+      "name": "Pressure Sensor 1",
+      "description": "Chamber pressure",
+      "properties": {
+        "equipment": "CVD_1"
+      }
+    },
+    "TEMP_1": {
+      "id": "TEMP_1",
+      "type": "sensor",
+      "name": "Temperature Sensor 1",
+      "description": "Chuck temperature",
+      "properties": {
+        "equipment": "CVD_1"
+      }
+    },
+    "PRESSURE_2": {
+      "id": "PRESSURE_2",
+      "type": "sensor",
+      "name": "Pressure Sensor 2",
+      "description": "Chamber pressure",
+      "properties": {
+        "equipment": "CVD_2"
+      }
+    },
+    "TEMP_2": {
+      "id": "TEMP_2",
+      "type": "sensor",
+      "name": "Temperature Sensor 2",
+      "description": "Chuck temperature",
+      "properties": {
+        "equipment": "CVD_2"
+      }
+    },
+    "PRESSURE_E": {
+      "id": "PRESSURE_E",
+      "type": "sensor",
+      "name": "Pressure Sensor E",
+      "description": "Chamber pressure",
+      "properties": {
+        "equipment": "ETCH_1"
+      }
+    },
+    "TEMP_E": {
+      "id": "TEMP_E",
+      "type": "sensor",
+      "name": "Temperature Sensor E",
+      "description": "Plasma temperature",
+      "properties": {
+        "equipment": "ETCH_1"
+      }
+    },
+    "FLOW_1": {
+      "id": "FLOW_1",
+      "type": "sensor",
+      "name": "Gas Flow Sensor 1",
+      "description": "Mass flow controller",
+      "properties": {
+        "equipment": "CVD_1"
+      }
+    },
+    "FLOW_2": {
+      "id": "FLOW_2",
+      "type": "sensor",
+      "name": "Gas Flow Sensor 2",
+      "description": "Mass flow controller",
+      "properties": {
+        "equipment": "CVD_2"
+      }
+    },
+    "PARTICLE_1": {
+      "id": "PARTICLE_1",
+      "type": "sensor",
+      "name": "Particle Sensor 1",
+      "description": "In-situ particle monitor",
+      "properties": {
+        "equipment": "CVD_1"
+      }
+    },
+    "PARTICLE_CLEAN": {
+      "id": "PARTICLE_CLEAN",
+      "type": "sensor",
+      "name": "Particle Sensor C",
+      "description": "In-situ particle monitor",
+      "properties": {
+        "equipment": "CLEAN_1"
+      }
+    },
+    "CHAMBER_PRESSURE": {
+      "id": "CHAMBER_PRESSURE",
+      "type": "parameter",
+      "name": "Chamber Pressure",
+      "description": "Process pressure setpoint",
+      "properties": {
+        "unit": "Torr"
+      }
+    },
+    "CHUCK_TEMP": {
+      "id": "CHUCK_TEMP",
+      "type": "parameter",
+      "name": "Chuck Temperature",
+      "description": "Wafer chuck temperature",
+      "properties": {
+        "unit": "C"
+      }
+    },
+    "GAS_FLOW_RATE": {
+      "id": "GAS_FLOW_RATE",
+      "type": "parameter",
+      "name": "Gas Flow Rate",
+      "description": "Total gas flow",
+      "properties": {
+        "unit": "sccm"
+      }
+    },
+    "RF_POWER": {
+      "id": "RF_POWER",
+      "type": "parameter",
+      "name": "RF Power",
+      "description": "Plasma RF power",
+      "properties": {
+        "unit": "W"
+      }
+    },
+    "DEP_TIME": {
+      "id": "DEP_TIME",
+      "type": "parameter",
+      "name": "Deposition Time",
+      "description": "Film deposition time",
+      "properties": {
+        "unit": "s"
+      }
+    },
+    "CLEAN_TIME": {
+      "id": "CLEAN_TIME",
+      "type": "parameter",
+      "name": "Clean Time",
+      "description": "Cleaning duration",
+      "properties": {
+        "unit": "s"
+      }
+    },
+    "CENTER": {
+      "id": "CENTER",
+      "type": "defect",
+      "name": "Center Defect",
+      "description": "Circular defects in wafer center",
+      "properties": {}
+    },
+    "DONUT": {
+      "id": "DONUT",
+      "type": "defect",
+      "name": "Donut Defect",
+      "description": "Ring-shaped defects in middle region",
+      "properties": {}
+    },
+    "EDGE_RING": {
+      "id": "EDGE_RING",
+      "type": "defect",
+      "name": "Edge-Ring Defect",
+      "description": "Ring at wafer edge",
+      "properties": {}
+    },
+    "EDGE_LOC": {
+      "id": "EDGE_LOC",
+      "type": "defect",
+      "name": "Edge-Loc Defect",
+      "description": "Localized defects at edge",
+      "properties": {}
+    },
+    "LOCAL": {
+      "id": "LOCAL",
+      "type": "defect",
+      "name": "Local Defect",
+      "description": "Scattered local defects",
+      "properties": {}
+    },
+    "RANDOM": {
+      "id": "RANDOM",
+      "type": "defect",
+      "name": "Random Defect",
+      "description": "Randomly distributed defects",
+      "properties": {}
+    },
+    "SCRATCH": {
+      "id": "SCRATCH",
+      "type": "defect",
+      "name": "Scratch Defect",
+      "description": "Linear scratch patterns",
+      "properties": {}
+    },
+    "NEAR_FULL": {
+      "id": "NEAR_FULL",
+      "type": "defect",
+      "name": "Near-Full Defect",
+      "description": "Almost entire wafer affected",
+      "properties": {}
+    },
+    "TEMP_GRADIENT": {
+      "id": "TEMP_GRADIENT",
+      "type": "root_cause",
+      "name": "Temperature Gradient",
+      "description": "Non-uniform temperature across wafer",
+      "properties": {}
+    },
+    "PRESSURE_VARIANCE": {
+      "id": "PRESSURE_VARIANCE",
+      "type": "root_cause",
+      "name": "Pressure Variance",
+      "description": "Chamber pressure instability",
+      "properties": {}
+    },
+    "PARTICLE_CONTAM": {
+      "id": "PARTICLE_CONTAM",
+      "type": "root_cause",
+      "name": "Particle Contamination",
+      "description": "Foreign particle introduction",
+      "properties": {}
+    },
+    "EDGE_BEAD": {
+      "id": "EDGE_BEAD",
+      "type": "root_cause",
+      "name": "Edge Bead Issue",
+      "description": "Problems at wafer edge",
+      "properties": {}
+    },
+    "CLAMP_MARKS": {
+      "id": "CLAMP_MARKS",
+      "type": "root_cause",
+      "name": "Clamp Marks",
+      "description": "Wafer clamping issues",
+      "properties": {}
+    },
+    "HANDLING_DAMAGE": {
+      "id": "HANDLING_DAMAGE",
+      "type": "root_cause",
+      "name": "Handling Damage",
+      "description": "Mechanical damage during transport",
+      "properties": {}
+    },
+    "CHEMICAL_PURITY": {
+      "id": "CHEMICAL_PURITY",
+      "type": "root_cause",
+      "name": "Chemical Purity",
+      "description": "Impurities in process chemicals",
+      "properties": {}
+    },
+    "UNIFORMITY": {
+      "id": "UNIFORMITY",
+      "type": "root_cause",
+      "name": "Process Uniformity",
+      "description": "Non-uniform process conditions",
+      "properties": {}
+    }
+  },
+  "edges": [
+    {
+      "source": "CVD_1",
+      "target": "PRESSURE_1",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_1",
+      "target": "TEMP_1",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_1",
+      "target": "FLOW_1",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_1",
+      "target": "PARTICLE_1",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_2",
+      "target": "PRESSURE_2",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_2",
+      "target": "TEMP_2",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_2",
+      "target": "FLOW_2",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "ETCH_1",
+      "target": "PRESSURE_E",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "ETCH_1",
+      "target": "TEMP_E",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CLEAN_1",
+      "target": "PARTICLE_CLEAN",
+      "relation": "has_sensor",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PRESSURE_1",
+      "target": "CHAMBER_PRESSURE",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "TEMP_1",
+      "target": "CHUCK_TEMP",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "FLOW_1",
+      "target": "GAS_FLOW_RATE",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PRESSURE_2",
+      "target": "CHAMBER_PRESSURE",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "TEMP_2",
+      "target": "CHUCK_TEMP",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "FLOW_2",
+      "target": "GAS_FLOW_RATE",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PRESSURE_E",
+      "target": "CHAMBER_PRESSURE",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "TEMP_E",
+      "target": "CHUCK_TEMP",
+      "relation": "measures",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_1",
+      "target": "CHAMBER_PRESSURE",
+      "relation": "controls",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_1",
+      "target": "CHUCK_TEMP",
+      "relation": "controls",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_1",
+      "target": "GAS_FLOW_RATE",
+      "relation": "controls",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CVD_1",
+      "target": "DEP_TIME",
+      "relation": "controls",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "ETCH_1",
+      "target": "RF_POWER",
+      "relation": "controls",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CLEAN_1",
+      "target": "CLEAN_TIME",
+      "relation": "controls",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "TEMP_GRADIENT",
+      "target": "CHUCK_TEMP",
+      "relation": "increases",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PRESSURE_VARIANCE",
+      "target": "CHAMBER_PRESSURE",
+      "relation": "increases_variance",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PARTICLE_CONTAM",
+      "target": "PARTICLE_1",
+      "relation": "increases",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PARTICLE_CONTAM",
+      "target": "PARTICLE_CLEAN",
+      "relation": "increases",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CHEMICAL_PURITY",
+      "target": "PARTICLE_1",
+      "relation": "increases",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "UNIFORMITY",
+      "target": "CHAMBER_PRESSURE",
+      "relation": "decreases",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "UNIFORMITY",
+      "target": "CHUCK_TEMP",
+      "relation": "decreases",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CENTER",
+      "target": "CVD_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CENTER",
+      "target": "CVD_2",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "DONUT",
+      "target": "LITHO_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "EDGE_RING",
+      "target": "CVD_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "EDGE_RING",
+      "target": "ETCH_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "EDGE_LOC",
+      "target": "LOAD_PORT_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "SCRATCH",
+      "target": "CMP_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "SCRATCH",
+      "target": "ROBOT_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "LOCAL",
+      "target": "CLEAN_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "RANDOM",
+      "target": "CLEAN_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "RANDOM",
+      "target": "CVD_1",
+      "relation": "associated_with",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "TEMP_GRADIENT",
+      "target": "CENTER",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PRESSURE_VARIANCE",
+      "target": "EDGE_RING",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PRESSURE_VARIANCE",
+      "target": "DONUT",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PARTICLE_CONTAM",
+      "target": "LOCAL",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "PARTICLE_CONTAM",
+      "target": "RANDOM",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "EDGE_BEAD",
+      "target": "EDGE_RING",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CLAMP_MARKS",
+      "target": "EDGE_LOC",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "HANDLING_DAMAGE",
+      "target": "SCRATCH",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    },
+    {
+      "source": "CHEMICAL_PURITY",
+      "target": "LOCAL",
+      "relation": "causes",
+      "weight": 1.0,
+      "description": ""
+    }
+  ]
+}
