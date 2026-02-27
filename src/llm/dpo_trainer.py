@@ -73,6 +73,7 @@ class DPOTrainerWrapper:
             "trust_remote_code": True,
         }
         
+        #DPO RL has two copies of the model: the "reference" (frozen) and the "policy" (trainable). 4bit quantization is efficient
         if self.model_config.load_in_4bit:
             from transformers import BitsAndBytesConfig
             load_kwargs["quantization_config"] = BitsAndBytesConfig(
