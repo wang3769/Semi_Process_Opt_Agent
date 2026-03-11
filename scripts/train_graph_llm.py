@@ -266,7 +266,10 @@ def main():
                        help="Output directory")
     
     args = parser.parse_args()
-    
+    # this is a new way of running with main(), running script on bash with pass into varibale --phase, --num_examples
+    # bash: python scripts/train_graph_llm.py --phase generate --num_examples 100
+    # the garparse.ArgumentPaser is particullary useful during machine learning training, image a case where you need to try different variable values, you don't need to change code but directly bash
+
     # Create output directory
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
