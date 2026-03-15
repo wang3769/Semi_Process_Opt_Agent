@@ -229,3 +229,65 @@ images = gen.generate(prompt="Your custom process description")
 - PyTorch 2.0+
 - CUDA-capable GPU (8GB+ VRAM recommended)
 - For image generation: 4GB+ VRAM
+
+---
+
+## Step 6: Generate QA from Book (MiniMax API)
+
+Extract text from the semiconductor process control book and generate SFT training data using MiniMax API.
+
+### Install Dependencies:
+```bash
+pip install pdfplumber PyPDF2
+```
+
+### Step 6a: Extract Text from PDF
+```bash
+python scripts/scrape_book.py
+```
+
+This will:
+- Extract text from `data/pdf_library/Fundamentals of Semiconductor Manufacturing and Process Control G. May C. Spanos.pdf`
+- Filter for RCA-related content (yield, defects, SPC, etc.)
+- Save chunks to `data/processed/book/book_chunks.json`
+
+### Step 6b: Generate QA Pairs (Requires API Key)
+
+1. Open `scripts/generate_qa.py` and fill in your API key:
+```python
+MINIMAX_API_KEY = "your_actual_api_key_here"  # Line 30
+```
+
+2. Run the generator:
+```bash
+python scripts/generate_qa.py
+```
+
+This will:
+- Load the extracted chunks
+- Call MiniMax-M2.5 API to generate 2 Q&A pairs per chunk
+- Save SFT-ready data to `data/processed/llm/book_sft_train.jsonl`
+
+### Test with Small Sample:
+```bash
+# Test with just 5 chunks
+python scripts/generate_qa.py --max-chunks 5
+```
+
+### Combine with Graph-based SFT:
+```bash
+# Combine book QA with graph QA
+cat data/processed/llm/book_sft_train.jsonl data/processed/llm/graph_sft_train.jsonl > data/processed/llm/combined_sft.jsonl
+```
+
+---
+
+## Files Generated
+
+| File | Description |
+|------|-------------|
+| `data/processed/kg/fab_graph.json` | Knowledge graph |
+| `data/processed/llm/graph_sft_train.jsonl` | Graph-based SFT training |
+| `data/processed/llm/graph_grpo_train.jsonl` | GRPO training data |
+| `data/processed/book/book_chunks.json` | Extracted book text |
+| `data/processed/llm/book_sft_train.jsonl` | Book-based SFT training |

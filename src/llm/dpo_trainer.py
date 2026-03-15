@@ -161,24 +161,24 @@ class DPOTrainerWrapper:
             fp16=self.dpo_config.fp16,
             bf16=self.dpo_config.bf16,
             save_strategy="steps",
-            evaluation_strategy="steps" if "eval" in dataset else "no",
-            report_to=["tensorboard"],
+            eval_strategy="no",
+            report_to="none",
             logging_dir=f"{self.dpo_config.output_dir}/logs",
+            model_init_kwargs={
+                "torch_dtype": torch.bfloat16,
+                "device_map": self.model_config.device_map,
+                "trust_remote_code": True,
+            },
         )
         
         # Initialize DPO trainer
         eval_dataset = dataset.get("eval")
         
         self.trainer = DPOTrainer(
-            model=self.model,
             args=training_args,
             train_dataset=dataset["train"],
             eval_dataset=eval_dataset,
             tokenizer=self.tokenizer,
-            beta=self.dpo_config.beta,
-            max_length=self.dpo_config.max_seq_length,
-            max_prompt_length=self.dpo_config.max_seq_length // 2,
-            max_target_length=self.dpo_config.max_seq_length // 2,
         )
         
         # Train

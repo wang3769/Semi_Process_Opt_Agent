@@ -279,16 +279,30 @@ def generate_training_examples(graph: KnowledgeGraph, num_examples: int = 100) -
     
     # Defect patterns to generate cases for
     defects = ["CENTER", "DONUT", "EDGE_RING", "EDGE_LOC", "LOCAL", "RANDOM", "SCRATCH"]
+    bevel_defects = ["EDGE_RING", "EDGE_LOC"]
+    contamination_defects = ["LOCAL", "RANDOM"]
+    physical_defects = ["SCRATCH"]
     
     # Root causes
     causes = ["TEMP_GRADIENT", "PRESSURE_VARIANCE", "PARTICLE_CONTAM", "EDGE_BEAD", 
               "CLAMP_MARKS", "HANDLING_DAMAGE", "CHEMICAL_PURITY", "UNIFORMITY"]
+    bevel_causes = ["EDGE_BEAD", "CLAMP_MARKS"]
+    contamination_causes = ["PARTICLE_CONTAM"]
+    physical_causes = ["HANDLING_DAMAGE"]
     
     examples = []
     
     for i in range(num_examples):
         defect = random.choice(defects)
         cause = random.choice(causes)
+
+        # Override cause based on defect type to ensure valid graph paths, this is based on process knowledge and the graph structure we defined
+        if defect in bevel_defects:
+            cause = random.choice(bevel_causes)
+        elif defect in contamination_defects:
+            cause = random.choice(contamination_causes)
+        elif defect in physical_defects:
+            cause = random.choice(physical_causes)
         
         rca_case = generator.generate_case(defect, true_root_cause=cause)
         

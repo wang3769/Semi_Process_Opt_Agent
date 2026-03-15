@@ -106,18 +106,56 @@ class SFTTrainerWrapper:
     
     def prepare_dataset(self):
         """Load and tokenize the training dataset."""
-        logger.info("Loading dataset...")
+        import json
         
-        # Load dataset
-        dataset = load_dataset(
-            "json",
-            data_files={
-                "train": self.sft_config.train_file,
-                "eval": self.sft_config.eval_file if os.path.exists(self.sft_config.eval_file) else self.sft_config.train_file,
-            }
-        )
+        logger.info("Loading dataset with streaming to handle mixed schema...")
         
-        logger.info(f"Loaded dataset: {dataset}")
+        # Read and normalize JSONL manually to handle mixed schemas
+        train_data = []
+        eval_data = []
+        
+        # Read train file
+        with open(self.sft_config.train_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip():
+                    obj = json.loads(line)
+                    # Normalize: convert input->instruction, output->response if needed
+                    normalized = {
+                        "instruction": obj.get("instruction", obj.get("input", "")),
+                        "context": obj.get("context", ""),
+                        "response": obj.get("response", obj.get("output", ""))
+                    }
+                    train_data.append(normalized)
+        
+        # Read eval file if exists, otherwise use subset of train
+        if os.path.exists(self.sft_config.eval_file):
+            with open(self.sft_config.eval_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        obj = json.loads(line)
+                        normalized = {
+                            "instruction": obj.get("instruction", obj.get("input", "")),
+                            "context": obj.get("context", ""),
+                            "response": obj.get("response", obj.get("output", ""))
+                        }
+                        eval_data.append(normalized)
+        else:
+            # Use 10% of train as eval
+            eval_size = max(1, len(train_data) // 10)
+            eval_data = train_data[:eval_size]
+            train_data = train_data[eval_size:]
+        
+        logger.info(f"Loaded {len(train_data)} train, {len(eval_data)} eval examples")
+        
+        # Create datasets
+        from datasets import Dataset
+        
+        train_dataset = Dataset.from_list(train_data)
+        eval_dataset = Dataset.from_list(eval_data)
+        
+        dataset = {"train": train_dataset, "eval": eval_dataset}
+        
+        logger.info(f"Dataset created: {dataset}")
         
         # Tokenize function
         def tokenize_function(examples):
@@ -128,6 +166,14 @@ class SFTTrainerWrapper:
                 examples.get("context", [""] * len(examples["instruction"])),
                 examples["response"]
             ):
+                # Handle None values
+                if instruction is None:
+                    instruction = ""
+                if context is None:
+                    context = ""
+                if response is None:
+                    response = ""
+                
                 #  this is qwen format
                 if context:
                     text = f"""<|im_start|>system
@@ -162,12 +208,18 @@ You are an expert semiconductor process engineer specializing in yield optimizat
             
             return tokenized
         
-        # Tokenize dataset
-        dataset = dataset.map(
+        # Tokenize datasets
+        dataset["train"] = dataset["train"].map(
             tokenize_function,
             batched=True,
-            remove_columns=dataset["train"].column_names,
-            desc="Tokenizing dataset",
+            remove_columns=["instruction", "context", "response"],
+            desc="Tokenizing train",
+        )
+        dataset["eval"] = dataset["eval"].map(
+            tokenize_function,
+            batched=True,
+            remove_columns=["instruction", "context", "response"],
+            desc="Tokenizing eval",
         )
         
         return dataset
@@ -204,10 +256,9 @@ You are an expert semiconductor process engineer specializing in yield optimizat
             fp16=self.sft_config.fp16,
             bf16=self.sft_config.bf16,
             save_strategy="steps",
-            evaluation_strategy="steps",
+            eval_strategy="steps",
             load_best_model_at_end=True,
-            report_to=["tensorboard"],
-            logging_dir=f"{self.sft_config.output_dir}/logs",
+            report_to="none",
         )
         
         # Initialize trainer
@@ -217,9 +268,6 @@ You are an expert semiconductor process engineer specializing in yield optimizat
             train_dataset=dataset["train"],
             eval_dataset=dataset.get("eval", dataset["train"].train_test_split(test_size=0.1)["test"]),
             data_collator=data_collator,
-            tokenizer=self.tokenizer,
-            max_seq_length=self.sft_config.max_seq_length,
-            dataset_text_field="input_ids",
         )
         
         # Train

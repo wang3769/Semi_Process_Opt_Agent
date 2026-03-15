@@ -90,7 +90,7 @@ def train_sft(model_name: str = "Qwen/Qwen2.5-7B-Instruct"):
     trainer = train_sft(
         model_name=model_name,
         output_dir="models/llm/sft_model",
-        train_file="data/processed/llm/sft_train.jsonl",
+        train_file="data/processed/llm/combined_sft.jsonl",
     )
     
     logger.info("\n✅ SFT training complete!")
