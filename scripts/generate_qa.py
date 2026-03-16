@@ -27,7 +27,7 @@ from typing import List, Dict, Optional
 
 # MiniMax API Configuration
 # Your API key from MiniMax dashboard
-MINIMAX_API_KEY = "sk-api-N_VB0s9a2371kidij9R2yWoMqWtExJzRdRyvvQJgDYZ3Gx-0so1FlATRW9uEYHq7Bcxb7Dd_E3TlKAeKgLxJP-ICzZAXmhgH5_0NULyoLXeeV_96PZ0OonI"
+MINIMAX_API_KEY = "xxx"
 
 # MiniMax API base URL (via OpenAI SDK)
 #MINIMAX_BASE_URL = "https://api.minimax.chat/v1"
