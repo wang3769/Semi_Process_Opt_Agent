@@ -115,6 +115,7 @@ class DPOTrainerWrapper:
         if not dataset:
             raise ValueError("No DPO training data found!")
         
+        # dataset library is a huggingface library that can load jsonl files and handle them efficiently for training
         from datasets import load_dataset
         dpo_dataset = load_dataset("json", data_files=dataset)
         
