@@ -63,20 +63,21 @@ except ImportError:
 class MiniMaxTranslator:
     """MiniMax API translator with semiconductor domain expertise."""
     
-    def __init__(self, api_key: str, base_url: str = "https://api.minimax.chat/v1"):
+    def __init__(self, api_key: str, base_url: str = "https://api.minimax.io/v1", model: str = "minimax-m2.5"):
         self.api_key = api_key
         self.base_url = base_url
-        self.model = "abab6.5s-chat"
+        self.model = model
         
     def translate(self, text: str, source_lang: str = "zh", target_lang: str = "en", context: str = "") -> str:
         """Translate text using MiniMax API."""
-        if not text.strip():
-            return text
+        if text is None or not str(text).strip():
+            return text if text else ""
         
         prompt = self._build_translation_prompt(text, source_lang, target_lang, context)
         
         try:
-            return self._call_api(prompt)
+            result = self._call_api(prompt)
+            return result if result else text
         except Exception as e:
             print(f"Translation error: {e}")
             return text
@@ -112,9 +113,9 @@ Translate accurately: {text}"""
         }
         
         payload = {
-            "model": self.model,
+            "model": "minimax-m2.5",
             "messages": [
-                {"role": "system", "content": "You are a professional technical translator specializing in semiconductor manufacturing."},
+                {"role": "system", "content": "You are a professional technical translator specializing in semiconductor manufacturing. Translate accurately."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.3,
@@ -126,12 +127,18 @@ Translate accurately: {text}"""
         
         result = response.json()
         
-        if "choices" in result and len(result["choices"]) > 0:
-            return result["choices"][0]["message"]["content"].strip()
-        elif "reply" in result:
-            return result["reply"].strip()
-        else:
-            raise ValueError(f"Unexpected response format: {result}")
+        # Debug: print response structure
+        if "choices" in result and result["choices"]:
+            content = result["choices"][0].get("message", {}).get("content")
+            if content:
+                return content.strip()
+        
+        if result.get("reply"):
+            return str(result["reply"]).strip()
+        
+        # Log the full response for debugging
+        print(f"  Warning: Unexpected response: {result}")
+        return None
     
     def translate_batch(self, texts: List[str], source_lang: str = "zh", target_lang: str = "en", 
                       context: str = "", delay: float = 0.5) -> List[str]:
@@ -141,11 +148,11 @@ Translate accurately: {text}"""
         for i, text in enumerate(texts):
             print(f"  Translating {i+1}/{len(texts)}...")
             
-            if text.strip():
+            if text and str(text).strip():
                 translation = self.translate(text, source_lang, target_lang, context)
                 translations.append(translation)
             else:
-                translations.append(text)
+                translations.append(str(text) if text else "")
             
             if i < len(texts) - 1:
                 time.sleep(delay)
@@ -338,18 +345,29 @@ def save_pairs(pairs: List[Tuple[DocumentElement, str]], output_dir: str,
 # =============================================================================
 
 def main():
+    # Get default paths relative to project root
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    default_docx_dir = project_root / "data" / "docx_library"
+    default_output_dir = project_root / "data" / "diagrams"
+    
     parser = argparse.ArgumentParser(
         description="Extract images and captions from Word document (position-based matching)"
     )
     
     # Input/Output
-    parser.add_argument("--input", type=str, required=True, help="Input Word document")
-    parser.add_argument("--output", type=str, required=True, help="Output directory")
+    parser.add_argument("--input", type=str, default=str(default_docx_dir), 
+                       help=f"Input Word document or directory (default: {default_docx_dir})")
+    parser.add_argument("--output", type=str, default=str(default_output_dir), 
+                       help=f"Output directory (default: {default_output_dir})")
     
     # MiniMax API
-    parser.add_argument("--api_key", type=str, help="MiniMax API key")
-    parser.add_argument("--api_base", type=str, default="https://api.minimax.chat/v1")
-    parser.add_argument("--model", type=str, default="abab6.5s-chat")
+    # TODO: Replace with your MiniMax API key before running
+    # Get your API key from: https://platform.minimax.io/
+    parser.add_argument("--api_key", type=str, default="API KEY HERE", 
+                       help="MiniMax API key")
+    parser.add_argument("--api_base", type=str, default="https://api.minimax.io/v1")
+    parser.add_argument("--model", type=str, default="minimax-m2.5")
     
     # Options
     parser.add_argument("--no_translate", action="store_true", help="Skip translation")
@@ -374,19 +392,46 @@ def main():
         print("Install: pip install requests")
         return
     
-    # Check input file
-    if not os.path.exists(args.input):
-        print(f"Error: Input file not found: {args.input}")
+    # Check input - handle both file and directory
+    input_path = Path(args.input)
+    
+    if not input_path.exists():
+        print(f"Error: Input path not found: {args.input}")
         return
     
-    # Extract elements
+    # If input is a directory, look for .docx files
+    docx_files = []
+    if input_path.is_dir():
+        docx_files = list(input_path.glob("*.docx"))
+        if not docx_files:
+            print(f"Error: No .docx files found in {args.input}")
+            return
+        print(f"Found {len(docx_files)} .docx files in directory")
+    else:
+        # Single file
+        if input_path.suffix.lower() != '.docx':
+            print(f"Error: Input file must be a .docx file")
+            return
+        docx_files = [input_path]
+    
+    # Extract elements from all docx files
     try:
-        print(f"Processing: {args.input}")
+        all_images = []
+        all_texts = []
         
-        images, texts = extract_elements_with_positions(args.input)
+        for docx_file in docx_files:
+            print(f"\nProcessing: {docx_file}")
+            
+            images, texts = extract_elements_with_positions(str(docx_file))
+            all_images.extend(images)
+            all_texts.extend(texts)
+            print(f"  Found {len(images)} images, {len(texts)} text paragraphs")
         
-        print(f"Found {len(images)} images")
-        print(f"Found {len(texts)} text paragraphs")
+        images = all_images
+        texts = all_texts
+        
+        print(f"\nTotal: Found {len(images)} images")
+        print(f"Total: Found {len(texts)} text paragraphs")
         
         if not images:
             print("No images found!")
@@ -409,8 +454,7 @@ def main():
             print("Translating captions to English using MiniMax...")
             print(f"{'='*60}")
             
-            translator = MiniMaxTranslator(args.api_key, args.api_base)
-            translator.model = args.model
+            translator = MiniMaxTranslator(args.api_key, args.api_base, args.model)
             
             captions = [caption for _, caption in cleaned_pairs]
             translations = translator.translate_batch(
