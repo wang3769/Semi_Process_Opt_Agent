@@ -20,7 +20,7 @@ from src.vision.clip_diagram_model import DiagramConfig, SemanticDiagramGenerato
 class TrainingConfig:
     data_dir: str = "data/diagrams"
     image_size: int = 224
-    clip_model: str = "openai/clip-vit-base-patch32"  # 512-dim embeddings
+    clip_model: str = "openai/clip-vit-base-patch32"
     batch_size: int = 4
     num_epochs: int = 10
     learning_rate: float = 1e-4
@@ -34,6 +34,8 @@ class DiagramTrainer:
     def __init__(self, config: TrainingConfig):
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        print(f"Using device: {self.device}")
         
         self._init_model()
         self._init_datasets()
@@ -49,8 +51,7 @@ class DiagramTrainer:
         )
         
         self.model = SemanticDiagramGenerator(model_config)
-        self.model.to(self.device)
-        print(f"Model on: {self.device}")
+        print("Model initialized")
     
     def _init_datasets(self):
         self.train_dataset = DiagramDataset(
@@ -59,26 +60,30 @@ class DiagramTrainer:
             split="train"
         )
         
+        # Always initialize val_loader to None first
+        self.val_loader = None
         self.val_dataset = None
+        
         val_path = Path(self.config.data_dir) / "val"
         if val_path.exists():
             for ext in ["*.png", "*.jpg", "*.jpeg"]:
                 if any(val_path.glob(ext)):
                     self.val_dataset = DiagramDataset(self.config.data_dir, self.config.image_size, "val")
+                    self.val_loader = torch.utils.data.DataLoader(
+                        self.val_dataset, batch_size=self.config.batch_size, shuffle=False, num_workers=0
+                    )
                     break
         
         self.train_loader = torch.utils.data.DataLoader(
             self.train_dataset, batch_size=self.config.batch_size, shuffle=True, num_workers=0
         )
         
-        if self.val_dataset:
-            self.val_loader = torch.utils.data.DataLoader(
-                self.val_dataset, batch_size=self.config.batch_size, shuffle=False, num_workers=0
-            )
-        
         print(f"Train: {len(self.train_dataset)}, Val: {len(self.val_dataset) if self.val_dataset else 0}")
     
     def compute_clip_loss(self, text_emb, image_emb):
+        text_emb = text_emb.to(self.device)
+        image_emb = image_emb.to(self.device)
+        
         text_emb = F.normalize(text_emb, p=2, dim=-1)
         image_emb = F.normalize(image_emb, p=2, dim=-1)
         logits = torch.matmul(text_emb, image_emb.T)
@@ -90,14 +95,12 @@ class DiagramTrainer:
         loss_t2i = F.cross_entropy(logits.T, labels)
         return (loss_i2t + loss_t2i) / 2
     
-    def train_step(self, batch):
-        images = batch["image"].to(self.device)
+    def train_step(self, batch, training: bool = True):
+        images = batch["image"]
         captions = batch["caption"]
         
-        text_emb = self.model.get_text_embeddings(captions)
-        
-        with torch.no_grad():
-            image_emb = self.model.image_encoder.extract_features(images)
+        text_emb = self.model.get_text_embeddings(captions, training=training)
+        image_emb = self.model.image_encoder.extract_features(images, training=training)
         
         loss = self.compute_clip_loss(text_emb, image_emb) * self.config.semantic_weight
         loss.backward()
@@ -106,7 +109,7 @@ class DiagramTrainer:
     
     @torch.no_grad()
     def validate(self):
-        if not self.val_loader:
+        if self.val_loader is None:
             return 0.0
         
         self.model.eval()
@@ -114,11 +117,11 @@ class DiagramTrainer:
         num = 0
         
         for batch in self.val_loader:
-            images = batch["image"].to(self.device)
+            images = batch["image"]
             captions = batch["caption"]
             
-            text_emb = self.model.get_text_embeddings(captions)
-            image_emb = self.model.image_encoder.extract_features(images)
+            text_emb = self.model.get_text_embeddings(captions, training=False)
+            image_emb = self.model.image_encoder.extract_features(images, training=False)
             
             sim = F.cosine_similarity(text_emb, image_emb, dim=-1).mean()
             total_sim += sim.item()
@@ -131,7 +134,14 @@ class DiagramTrainer:
         print("Starting Training")
         print("=" * 50)
         
-        optimizer = torch.optim.AdamW(self.model.text_encoder.parameters(), lr=self.config.learning_rate, weight_decay=0.01)
+        trainable_params = (
+            list(self.model.text_encoder.parameters()) +
+            list(self.model.image_encoder.projection.parameters())
+        )
+        
+        print(f"Trainable parameters: {sum(p.numel() for p in trainable_params)}")
+        
+        optimizer = torch.optim.AdamW(trainable_params, lr=self.config.learning_rate, weight_decay=0.01)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.config.num_epochs)
         
         output_path = Path(self.config.output_dir)
@@ -140,13 +150,12 @@ class DiagramTrainer:
         best_loss = float("inf")
         
         for epoch in range(self.config.num_epochs):
-            self.model.train()
             epoch_loss = 0.0
             
             pbar = tqdm(self.train_loader, desc=f"Epoch {epoch+1}/{self.config.num_epochs}")
             
             for batch_idx, batch in enumerate(pbar):
-                losses = self.train_step(batch)
+                losses = self.train_step(batch, training=True)
                 
                 if (batch_idx + 1) % self.config.gradient_accumulation_steps == 0:
                     optimizer.step()
@@ -159,7 +168,7 @@ class DiagramTrainer:
             self.history["train_loss"].append(avg_loss)
             
             val_sim = 0.0
-            if self.val_loader:
+            if self.val_loader is not None:
                 val_sim = self.validate()
                 self.history["val_similarity"].append(val_sim)
                 print(f"Epoch {epoch+1}: Loss={avg_loss:.4f}, Val Sim={val_sim:.4f}")

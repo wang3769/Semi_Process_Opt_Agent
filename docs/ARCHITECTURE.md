@@ -57,7 +57,7 @@ This is an Agentic Graph-Retrieval system for Semiconductor Root Cause Analysis 
     │  │  - Defect Pattern   │    │  ✓ Correctness: Found root cause?   │   │
     │  │  - Subgraph         │    │  ✓ Causal Link: Valid graph path?   │   │
     │  │                     │    │  ✓ Efficiency: Fewest steps?         │   │
-    │  │  Output:             │    │  ✗ Hallucination: -2.0 penalty!     │   │
+    │  │  Output:             │    │  ✗ Hallucination: -2.0 penalty!    │   │
     │  │  - Trajectory walk  │    │                                     │   │
     │  │  - Reasoning chain  │    │  This ensures the model:             │   │
     │  │                     │    │  - NEVER hallucinates tools          │   │
@@ -108,21 +108,32 @@ This is an Agentic Graph-Retrieval system for Semiconductor Root Cause Analysis 
     │  ┌───────────────────────────────────────────────────────────────────┐  │
     │  │              PROCESS ILLUSTRATION GENERATOR                       │  │
     │  │                                                                     │  │
+    │  │   Two-Stage Approach:                                               │  │
+    │  │   ┌─────────────────────────┐  ┌────────────────────────────┐   │  │
+    │  │   │  STAGE 1: CLIP          │  │  STAGE 2: Stable Diffusion  │   │  │
+    │  │   │  Alignment Training    │  │  Diagram Generation        │   │  │
+    │  │   │                         │  │                             │   │  │
+    │  │   │  clip_diagram_model.py │  │  sd_diagram_model.py       │   │  │
+    │  │   │  - Text encoder        │  │  - CLIP for semantic guide  │   │  │
+    │  │   │  - Image encoder      │  │  - SD 2.1 pipeline         │   │  │
+    │  │   │  - Contrastive loss   │  │  - Prompt enhancement      │   │  │
+    │  │   └─────────────────────────┘  └────────────────────────────┘   │  │
+    │  │                                                                     │  │
     │  │   Text Prompt: "CVD chamber cross-section with gas flow"            │  │
     │  │                          │                                          │  │
     │  │                          ▼                                          │  │
     │  │   ┌─────────────────────────────────────────────────────────┐     │  │
-    │  │   │  Stable Diffusion 2.1 + Optional LoRA Fine-tuning        │     │  │
-    │  │   │  - Encoder: CLIP text encoder                           │     │  │
-    │  │   │  - Decoder: Latent diffusion UNet                       │     │  │
-    │  │   │  - Output: 512x512 or 768x512 for PPT                   │     │  │
+    │  │   │  Stable Diffusion 2.1 + Fine-tuned CLIP Guidance          │     │  │
+    │  │   │  - Encoder: CLIP ViT-B/32 (frozen or fine-tuned)        │     │  │
+    │  │   │  - Decoder: Latent diffusion UNet                        │     │  │
+    │  │   │  - Output: 512x512 for PPT                               │     │  │
     │  │   └─────────────────────────────────────────────────────────┘     │  │
     │  │                          │                                          │  │
     │  │                          ▼                                          │  │
     │  │   ┌─────────────────────────────────────────────────────────┐     │  │
     │  │   │  "Fake 3D" Cross-Section Illustration                  │     │  │
     │  - │   │  CVD chamber with gas flow arrows                     │     │  │
-    │  │   │ with ion bombardment                     - Etch chamber │     │  │   │  │
+    │  │   │  with ion bombardment                     - Etch chamber │     │  │
     │  - Lithography exposure diagram                          │     │  │
     │  │   └─────────────────────────────────────────────────────────┘     │  │
     │  └───────────────────────────────────────────────────────────────────┘  │
@@ -195,31 +206,45 @@ CausalRewardCalculator
     - This is the key safety feature for fab deployment
 ```
 
-### 4. Process Image Generator (`src/vision/image_generator.py`)
+### 4. Vision Models (`src/vision/`)
+
+#### 4.1 CLIP Alignment Model (`clip_diagram_model.py`)
 
 ```
-ProcessImageGenerator
-├── Model: Stable Diffusion 2.1-base
-│   ├── Text Encoder: CLIP ViT-L/14
-│   ├── UNet: 860M parameters
-│   └── VAE: Latent space encoding
+CLIPDiagramModel (Stage 1: Training)
+├── Model: openai/clip-vit-base-patch32 (512-dim embeddings)
+│   ├── CLIPTextEncoder: Text → 512-dim embedding
+│   └── CLIPImageEncoder: Image → 512-dim embedding
+│
+├── Training:
+│   ├── Dataset: images + .txt captions
+│   ├── Loss: Contrastive loss (symmetric)
+│   └── Output: Fine-tuned CLIP for diagram alignment
+│
+└── Usage:
+    python scripts/train_diagram_clip.py
+    → saves to models/clip_diagram/best_model.pt
+```
+
+#### 4.2 Stable Diffusion Generator (`sd_diagram_model.py`)
+
+```
+SDDiagramGenerator (Stage 2: Generation)
+├── Model: stabilityai/stable-diffusion-2-1-base
+│   ├── CLIPTextEncoder: Semantic guidance
+│   ├── UNet: Latent diffusion (860M params)
+│   └── VAE: Image encoding/decoding
 │
 ├── Features:
-│   ├── Text-to-image generation
+│   ├── Loads fine-tuned CLIP for better alignment
+│   ├── Prompt enhancement for technical diagrams
 │   ├── Image-to-image variations
-│   ├── Optional LoRA fine-tuning
-│   └── VRAM optimized (attention slicing, VAE slicing)
+│   └── Batch generation (4+ images)
 │
-├── Example Prompts:
-│   ├── "cvd_chamber": CVD chamber cross-section with gas flow
-│   ├── "etch_chamber": Plasma etching with ion bombardment
-│   ├── "litho_exposure": Lithography UV exposure diagram
-│   └── "cmp_process": Chemical mechanical polishing schematic
-│
-└── Output:
-    ├── 512x512 or 768x512 for PPT
-    ├── PNG format with transparency support
-    └── Batch generation (4 variations)
+└── Usage:
+    from src.vision.sd_diagram_model import load_trained_generator
+    generator = load_trained_generator("models/clip_diagram/best_model.pt")
+    images = generator.generate("CMOS transistor cross-section")
 ```
 
 ---
@@ -242,10 +267,26 @@ ProcessImageGenerator
 │  │  GRPO JSONL   │    │  Model v1     │    │  Graph-constrained    │    │
 │  └────────────────┘    └───────────────┘    └────────────────────────┘    │
 │                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  VISION TRAINING PIPELINE                                            │  │
+│  │                                                                       │  │
+│  │  ┌─────────────────────────┐    ┌────────────────────────────────┐   │  │
+│  │  │  STAGE 1: CLIP          │    │  STAGE 2: Stable Diffusion    │   │  │
+│  │  │  Alignment             │    │  Generation                    │   │  │
+│  │  │                         │    │                                │   │  │
+│  │  │  Train on diagram       │───▶│  Use trained CLIP as          │   │  │
+│  │  │  image-caption pairs    │    │  semantic guide for SD        │   │  │
+│  │  │                         │    │                                │   │  │
+│  │  │  Output:                │    │  Output:                      │   │  │
+│  │  │  clip_diagram_model.py │    │  sd_diagram_model.py          │   │  │
+│  │  │  models/clip_diagram/ │    │  Generated diagrams            │   │  │
+│  │  └─────────────────────────┘    └────────────────────────────────┘   │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
 │  Data Sources (All Synthetic - No Real Fab Data!):                         │
-│  - Defect patterns from WM-811K (public dataset)                          │
-│  - Sensor anomalies from SECOM (public dataset)                            │
-│  - Graph structure based on typical fab topology                           │
+│  - Defect patterns from WM-811K (public dataset)                           │
+│  - Sensor anomalies from SECOM (public dataset)                           │
+│  - Graph structure based on typical fab topology                          │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -274,14 +315,16 @@ Semi_Process_Opt_Agent/
 │   │
 │   ├── vision/                  # Vision/Image Generation
 │   │   ├── __init__.py
-│   │   └── image_generator.py   # Stable Diffusion for process illustrations
+│   │   ├── clip_diagram_model.py    # CLIP alignment (Stage 1)
+│   │   └── sd_diagram_model.py     # SD generation (Stage 2)
 │   │
 │   └── models/                  # ML Models
 │       └── ...
 │
 ├── scripts/
 │   ├── train_graph_llm.py       # Main training pipeline
-│   ├── train_llm.py            # Text-based LLM training
+│   ├── train_llm.py             # Text-based LLM training
+│   ├── train_diagram_clip.py    # CLIP training (Stage 1)
 │   └── ...
 │
 ├── data/
@@ -292,7 +335,8 @@ Semi_Process_Opt_Agent/
 │   │   │   ├── graph_sft_train.jsonl    # SFT training data
 │   │   │   └── graph_grpo_train.jsonl   # GRPO training data
 │   │   └── vision/
-│   │       └── lora_data/      # LoRA fine-tuning prompts
+│   │       ├── diagrams/train/   # CLIP training images
+│   │       └── diagrams/val/    # CLIP validation images
 │   └── ...
 │
 ├── docs/
@@ -328,13 +372,12 @@ The GRPO reward structure explicitly rewards:
 - Efficiency (fewer steps = better)
 - And penalizes hallucinations heavily
 
-### 4. Process Illustration Generation
+### 4. Two-Stage Process Illustration Generation
 
-The vision module provides:
-- Text-to-image for PPT presentations
-- No precision requirement - "fake 3D" style
-- Custom prompts for semiconductor processes
-- Optional LoRA fine-tuning for custom styles
+The vision module uses a two-stage approach:
+- **Stage 1**: Fine-tune CLIP on diagram-caption pairs for better alignment
+- **Stage 2**: Use fine-tuned CLIP as semantic guide for Stable Diffusion
+- This ensures generated diagrams match technical descriptions accurately
 
 ---
 
@@ -343,14 +386,18 @@ The vision module provides:
 For production deployment:
 
 ```bash
-# Train on GPU (requires CUDA)
+# Train LLM on GPU (requires CUDA)
 python scripts/train_graph_llm.py --phase all --num_examples 1000
 
-# Generate process illustrations
-python -c "from src.vision.image_generator import ProcessImageGenerator; \
-  gen = ProcessImageGenerator(); \
-  img = gen.generate('CVD chamber cross-section'); \
-  gen.save_image(img[0], 'output/cvd.png')"
+# Stage 1: Train CLIP for diagram alignment
+python scripts/train_diagram_clip.py
+# Output: models/clip_diagram/best_model.pt
+
+# Stage 2: Generate process illustrations
+python -c "from src.vision.sd_diagram_model import load_trained_generator; \
+  gen = load_trained_generator('models/clip_diagram/best_model_pt'); \
+  imgs = gen.generate('CVD chamber cross-section'); \
+  gen.save_image(imgs[0], 'output/cvd.png')"
 
 # The fine-tuned model will be in:
 # models/graph_grpo/
