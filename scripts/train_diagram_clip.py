@@ -10,13 +10,14 @@ from dataclasses import dataclass, asdict
 from tqdm import tqdm
 
 PROJECT_ROOT = Path(__file__).parent.parent
+# here the PROJECT_ROOT has been assigned to a variable. You can tell that the inconsistency of variable assignment is the signature of LLM generated code, it might learned from somewhere.
 import sys
 sys.path.insert(0, str(PROJECT_ROOT))
-
+# The above code is to ensure that the script can import modules from the project root directory, which is necessary for importing the CLIP diagram model and dataset classes; highest priority
 from src.vision.clip_diagram_model import DiagramConfig, SemanticDiagramGenerator, DiagramDataset
+# trainer in scripts, model in src, and image in model is a common pattern in LLM repo.
 
-
-@dataclass
+@dataclass # quick definition of class, no need to write __init__ method
 class TrainingConfig:
     data_dir: str = "data/diagrams"
     image_size: int = 224
@@ -93,6 +94,7 @@ class DiagramTrainer:
         
         loss_i2t = F.cross_entropy(logits, labels)
         loss_t2i = F.cross_entropy(logits.T, labels)
+        # Forces the model to maximize the diagonal of this matrix (where the correct text matches the correct image) and minimize everything else.
         return (loss_i2t + loss_t2i) / 2
     
     def train_step(self, batch, training: bool = True):
