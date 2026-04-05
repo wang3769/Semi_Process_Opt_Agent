@@ -25,7 +25,7 @@ class TrainingConfig:
     batch_size: int = 4
     num_epochs: int = 10
     learning_rate: float = 1e-4
-    gradient_accumulation_steps: int = 4
+    gradient_accumulation_steps: int = 4 # accumulate gradients over multiple batches to effectively increase batch size without increasing memory usage; common technique for training with limited GPU memory
     semantic_weight: float = 0.5
     output_dir: str = "models/clip_diagram"
     device: str = "cuda"
@@ -46,6 +46,7 @@ class DiagramTrainer:
     def _init_model(self):
         print("Initializing model...")
         
+        # training config give out model config; and then generate the model; common pracice
         model_config = DiagramConfig(
             clip_model_name=self.config.clip_model,
             device=self.config.device,
@@ -94,6 +95,7 @@ class DiagramTrainer:
         
         loss_i2t = F.cross_entropy(logits, labels)
         loss_t2i = F.cross_entropy(logits.T, labels)
+        # symmetric loss, just a common practice
         # Forces the model to maximize the diagonal of this matrix (where the correct text matches the correct image) and minimize everything else.
         return (loss_i2t + loss_t2i) / 2
     

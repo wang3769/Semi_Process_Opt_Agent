@@ -107,7 +107,7 @@ class SemanticDiagramGenerator(nn.Module):
         """Get text embeddings - set training=True during training."""
         result = self.text_encoder.get_embeddings(prompts, training=training)
         embeddings = result["text_embeddings"]
-        embeddings = F.normalize(embeddings, p=2, dim=-1)
+        embeddings = F.normalize(embeddings, p=2, dim=-1) # L2 normalization p=2
         return embeddings
 
 
