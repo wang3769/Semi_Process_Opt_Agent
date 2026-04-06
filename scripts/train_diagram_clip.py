@@ -58,11 +58,12 @@ class DiagramTrainer:
     def _init_datasets(self):
         self.train_dataset = DiagramDataset(
             data_dir=self.config.data_dir,
-            image_size=self.config.image_size,
+            image_size=self.config.image_size, 
             split="train"
         )
         
         # Always initialize val_loader to None first
+        # this is actually defensive programming to avoid only having training data; you just can't create dataset with split = 'val'
         self.val_loader = None
         self.val_dataset = None
         
@@ -75,6 +76,7 @@ class DiagramTrainer:
                         self.val_dataset, batch_size=self.config.batch_size, shuffle=False, num_workers=0
                     )
                     break
+        # num_works is for CPU "parallelism", because CPU is mainly used for I/O and file operation. Here it is exculusively CPU not GPU. Batch size is for GPU
         
         self.train_loader = torch.utils.data.DataLoader(
             self.train_dataset, batch_size=self.config.batch_size, shuffle=True, num_workers=0
@@ -93,11 +95,13 @@ class DiagramTrainer:
         batch_size = text_emb.shape[0]
         labels = torch.arange(batch_size, device=self.device)
         
+        # labels is the correct index used to calculate cross_entropy. this is just how torch decides
         loss_i2t = F.cross_entropy(logits, labels)
         loss_t2i = F.cross_entropy(logits.T, labels)
         # symmetric loss, just a common practice
         # Forces the model to maximize the diagonal of this matrix (where the correct text matches the correct image) and minimize everything else.
         return (loss_i2t + loss_t2i) / 2
+        # remember this is a pre-trained model structure. two loss ensures no directional bias. People can later play with it either way
     
     def train_step(self, batch, training: bool = True):
         images = batch["image"]
@@ -107,7 +111,7 @@ class DiagramTrainer:
         image_emb = self.model.image_encoder.extract_features(images, training=training)
         
         loss = self.compute_clip_loss(text_emb, image_emb) * self.config.semantic_weight
-        loss.backward()
+        loss.backward() #this might be confusing, backward when there is no optimizer step. Because we use gradient accumulation. they are adding up now
         
         return {"loss": loss.item()}
     
@@ -128,6 +132,7 @@ class DiagramTrainer:
             image_emb = self.model.image_encoder.extract_features(images, training=False)
             
             sim = F.cosine_similarity(text_emb, image_emb, dim=-1).mean()
+            # note that evaluation metric is cosine similarity which is the absolute gauge but your loss is cross-entropy which is a relative gauge.
             total_sim += sim.item()
             num += 1
         
@@ -142,6 +147,9 @@ class DiagramTrainer:
             list(self.model.text_encoder.parameters()) +
             list(self.model.image_encoder.projection.parameters())
         )
+        # here we have a big assumption, ViT backone frozen as the detection of lines and edges while projection layer is somewhat a semantic translator
+        # on the other hand, text encode is directly mapping towards semantic space
+        # THese are quite big assumptions.
         
         print(f"Trainable parameters: {sum(p.numel() for p in trainable_params)}")
         
@@ -162,7 +170,7 @@ class DiagramTrainer:
                 losses = self.train_step(batch, training=True)
                 
                 if (batch_idx + 1) % self.config.gradient_accumulation_steps == 0:
-                    optimizer.step()
+                    optimizer.step() # now accumulated gradients are applied to update the model parameters
                     optimizer.zero_grad()
                 
                 epoch_loss += losses["loss"]
@@ -234,3 +242,30 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# --- THE STANDARD PYTORCH TRAINING CADENCE --- give yourself a remind
+'''
+# 1. FORWARD PASS: 
+# The model makes a "guess" based on the input data.
+outputs = model(inputs)
+
+# 2. LOSS CALCULATION: 
+# Measure how far the "guess" is from the "truth".
+loss = criterion(outputs, targets)
+
+# 3. BACKWARD PASS (The "Investigation"): 
+# Calculate gradients (slopes). This tells every parameter 
+# which direction to move to reduce the loss, but does NOT move them yet.
+loss.backward()
+
+# 4. OPTIMIZER STEP (The "Update"): 
+# The only part that actually changes the weights. 
+# It uses the gradients from step 3 and the Learning Rate to nudge the parameters.
+optimizer.step()
+
+# 5. ZERO GRAD (The "Reset"): 
+# Clears the "notebook" of gradients. If you forget this, 
+# the next batch's gradients will add to the old ones (accumulation).
+optimizer.zero_grad()
+'''

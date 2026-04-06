@@ -122,8 +122,8 @@ class DiagramDataset(torch.utils.data.Dataset):
             self.data_dir = split_dir
         
         self.image_files = []
-        for ext in ["*.png", "*.jpg", "*.jpeg"]:
-            self.image_files.extend(list(self.data_dir.glob(ext)))
+        for ext in ["*.png", "*.jpg", "*.jpeg"]: # * is the wildcard char for pettern matching for glob
+            self.image_files.extend(list(self.data_dir.glob(ext))) # be mindful of what glob returns, you have to use a list to store these path objects. Very interesting
         
         print(f"Loaded {len(self.image_files)} images from {self.data_dir}")
         
@@ -131,7 +131,11 @@ class DiagramDataset(torch.utils.data.Dataset):
         self.transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
+            # of the original ImageNet dataset.these hardcoded values
+            # transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+            #              std=[0.229, 0.224, 0.225])
         ])
+        # think of compose as a pipeline of transfomrmations
     
     def __len__(self):
         return len(self.image_files)
@@ -139,11 +143,11 @@ class DiagramDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         img_path = self.image_files[idx]
         
-        from PIL import Image
+        from PIL import Image # do not use openCV, PTL is the gold standard for torchvision
         image = Image.open(img_path).convert("RGB")
         image = self.transform(image)
         
-        txt_path = img_path.with_suffix(".txt")
+        txt_path = img_path.with_suffix(".txt") # suffix does the swap of extensions
         if txt_path.exists():
             try:
                 with open(txt_path, "r", encoding="utf-8") as f:
