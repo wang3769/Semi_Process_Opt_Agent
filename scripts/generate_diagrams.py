@@ -2,7 +2,8 @@
 Generate Diagrams from Text using Stable Diffusion
 """
 
-import argparse
+import argparse # this is what needed for dynamic CLI-based configuration; such that you can use bash command with --args to specify different parameters without changing the code
+# this is in sharp constract with hardcoding a training configuration class as in CLIP where flexibility is a bit less needed but reproducibility is critical
 import sys
 from pathlib import Path
 
@@ -18,8 +19,8 @@ def generate_single(generator, prompt, args):
     images = generator.generate(
         prompt=prompt,
         num_images=args.num_images,
-        num_inference_steps=args.steps,
-        guidance_scale=args.guidance,
+        num_inference_steps=args.steps, #steps: How many iterations the AI takes to "denoise" the image.
+        guidance_scale=args.guidance, # guidance: How strictly the AI follows your text prompt.
         seed=args.seed,
     )
     
